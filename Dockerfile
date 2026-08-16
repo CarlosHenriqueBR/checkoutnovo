@@ -38,4 +38,5 @@ COPY --from=builder /app/scripts ./scripts
 RUN mkdir -p /data/uploads
 
 EXPOSE 3000
-CMD ["npx", "next", "start", "-p", "3000", "-H", "0.0.0.0"]
+# shell form: o $PORT injetado pelo Railway precisa ser expandido em runtime
+CMD ["sh", "-c", "npx next start -H 0.0.0.0 -p ${PORT:-3000}"]
