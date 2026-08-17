@@ -84,3 +84,131 @@ export function metrics(): Metrics {
     conversionRate: t ? Math.round((p / t) * 1000) / 10 : 0,
   };
 }
+
+/* =====================================================================
+ * MÉTRICAS DIÁRIAS
+ * ---------------------------------------------------------------------
+ * Visão de COORTE por dia de criação do pedido: dos PIX gerados no dia X,
+ * quantos foram pagos e quanto renderam. É essa a leitura que casa com o
+ * gasto de tráfego do mesmo dia.
+ *
+ * `recebidoCents` é a outra leitura — dinheiro que efetivamente caiu no
+ * dia (por paid_at), independente de quando o pedido nasceu.
+ * ===================================================================== */
+
+export interface DailyRow {
+  dia: string;            // YYYY-MM-DD
+  gerados: number;        // PIX gerados no dia
+  pagos: number;          // desses, quantos foram pagos
+  receitaCents: number;   // faturamento da coorte do dia
+  recebidoCents: number;  // caixa do dia (por paid_at)
+  taxa: number;           // % de aprovação (pagos / gerados)
+}
+
+export interface DailyReport {
+  rows: DailyRow[];
+  totalReceitaCents: number;
+  totalGerados: number;
+  totalPagos: number;
+  taxaMedia: number;
+  ticketMedioCents: number;
+  melhorDia: DailyRow | null;
+  /** Comparação com o período imediatamente anterior, de mesmo tamanho. */
+  variacaoReceitaPct: number | null;
+  variacaoTaxaPct: number | null;
+}
+
+interface CohortRow {
+  dia: string;
+  gerados: number;
+  pagos: number;
+  receita: number;
+}
+
+function cohortQuery(days: number): CohortRow[] {
+  return all<CohortRow>(
+    `SELECT date(created_at) AS dia,
+            COUNT(*) AS gerados,
+            SUM(CASE WHEN status = 'COMPLETED' THEN 1 ELSE 0 END) AS pagos,
+            COALESCE(SUM(CASE WHEN status = 'COMPLETED' THEN amount_cents ELSE 0 END), 0) AS receita
+       FROM orders
+      WHERE date(created_at) >= date('now', ?)
+        AND date(created_at) <= date('now')
+      GROUP BY date(created_at)
+      ORDER BY dia`,
+    [`-${days - 1} days`],
+  );
+}
+
+/** Relatório diário dos últimos `days` dias, sem buracos na série. */
+export function dailyReport(days = 14): DailyReport {
+  const safeDays = Math.min(Math.max(Math.round(days) || 14, 1), 90);
+
+  const cohort = cohortQuery(safeDays);
+  const cash = all<{ dia: string; recebido: number }>(
+    `SELECT date(paid_at) AS dia, COALESCE(SUM(amount_cents), 0) AS recebido
+       FROM orders
+      WHERE status = 'COMPLETED' AND paid_at IS NOT NULL
+        AND date(paid_at) >= date('now', ?) AND date(paid_at) <= date('now')
+      GROUP BY date(paid_at)`,
+    [`-${safeDays - 1} days`],
+  );
+
+  const byDay = new Map(cohort.map((r) => [r.dia, r]));
+  const cashByDay = new Map(cash.map((r) => [r.dia, r.recebido]));
+
+  // Preenche todos os dias do intervalo, inclusive os sem venda.
+  const rows: DailyRow[] = [];
+  const today = new Date();
+  for (let i = safeDays - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const dia = d.toISOString().slice(0, 10);
+    const c = byDay.get(dia);
+    const gerados = c?.gerados ?? 0;
+    const pagos = c?.pagos ?? 0;
+    rows.push({
+      dia,
+      gerados,
+      pagos,
+      receitaCents: c?.receita ?? 0,
+      recebidoCents: cashByDay.get(dia) ?? 0,
+      taxa: gerados ? Math.round((pagos / gerados) * 1000) / 10 : 0,
+    });
+  }
+
+  const totalReceitaCents = rows.reduce((s, r) => s + r.receitaCents, 0);
+  const totalGerados = rows.reduce((s, r) => s + r.gerados, 0);
+  const totalPagos = rows.reduce((s, r) => s + r.pagos, 0);
+
+  // Período anterior, de mesmo tamanho, para a variação.
+  const prev = all<{ receita: number; gerados: number; pagos: number }>(
+    `SELECT COALESCE(SUM(CASE WHEN status = 'COMPLETED' THEN amount_cents ELSE 0 END), 0) AS receita,
+            COUNT(*) AS gerados,
+            SUM(CASE WHEN status = 'COMPLETED' THEN 1 ELSE 0 END) AS pagos
+       FROM orders
+      WHERE date(created_at) >= date('now', ?) AND date(created_at) < date('now', ?)`,
+    [`-${safeDays * 2 - 1} days`, `-${safeDays - 1} days`],
+  )[0];
+
+  const taxaMedia = totalGerados ? Math.round((totalPagos / totalGerados) * 1000) / 10 : 0;
+  const taxaPrev = prev && prev.gerados ? (prev.pagos / prev.gerados) * 100 : 0;
+
+  const melhorDia = rows.reduce<DailyRow | null>(
+    (best, r) => (!best || r.receitaCents > best.receitaCents ? r : best),
+    null,
+  );
+
+  return {
+    rows,
+    totalReceitaCents,
+    totalGerados,
+    totalPagos,
+    taxaMedia,
+    ticketMedioCents: totalPagos ? Math.round(totalReceitaCents / totalPagos) : 0,
+    melhorDia: melhorDia && melhorDia.receitaCents > 0 ? melhorDia : null,
+    variacaoReceitaPct:
+      prev && prev.receita > 0 ? Math.round(((totalReceitaCents - prev.receita) / prev.receita) * 1000) / 10 : null,
+    variacaoTaxaPct: taxaPrev > 0 ? Math.round((taxaMedia - taxaPrev) * 10) / 10 : null,
+  };
+}

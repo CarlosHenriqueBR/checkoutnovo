@@ -1,14 +1,16 @@
 import Link from 'next/link';
 import { all } from '@/lib/db';
-import { metrics } from '@/lib/orders';
+import { metrics, dailyReport } from '@/lib/orders';
 import { brl, safeJson, appUrl } from '@/lib/utils';
 import { auditTracking } from '@/lib/attribution';
 import type { Order, TrackingData, Checkout } from '@/lib/types';
+import { RevenueChart } from '@/components/DailyCharts';
 
 export const dynamic = 'force-dynamic';
 
 export default function Overview() {
   const m = metrics();
+  const week = dailyReport(7);
   const recent = all<Order>('SELECT * FROM orders ORDER BY created_at DESC LIMIT 10');
   const checkouts = all<Checkout>('SELECT * FROM checkouts WHERE active = 1 ORDER BY id DESC LIMIT 5');
 
@@ -44,6 +46,18 @@ export default function Overview() {
           click_id / gclid). Confirme que o <code>/t.js</code> está instalado na página de entrada do anúncio.
         </div>
       )}
+
+      <div className="vg-card">
+        <div className="toolbar" style={{ marginBottom: 4 }}>
+          <h2 className="dash-h1" style={{ fontSize: 16 }}>Últimos 7 dias</h2>
+          <div className="spacer" />
+          <Link className="btn" href="/dashboard/faturamento">Relatório completo →</Link>
+        </div>
+        <p className="dash-desc" style={{ marginBottom: 8 }}>
+          {brl(week.totalReceitaCents)} em {week.totalPagos} vendas • taxa de aprovação {week.taxaMedia}%
+        </p>
+        <RevenueChart rows={week.rows} />
+      </div>
 
       <h2 className="dash-h1" style={{ fontSize: 17, marginTop: 24 }}>Checkouts ativos</h2>
       <table className="dash-table" style={{ marginBottom: 24 }}>
