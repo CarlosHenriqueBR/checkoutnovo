@@ -49,6 +49,18 @@ export interface CheckoutConfig {
   storeName?: string;
   /** Texto explicativo abaixo do seletor de Pix */
   pixNotice?: string;
+
+  /* ---------------- personalização livre (HTML e CSS) ---------------- */
+  /** CSS aplicado só neste checkout — pode reestilizar qualquer classe .ck-* */
+  customCss?: string;
+  /** HTML no topo, acima do selo de segurança (logo, banner, aviso) */
+  htmlTop?: string;
+  /** HTML logo abaixo do carrinho */
+  htmlAfterCart?: string;
+  /** HTML antes do bloco de pagamento (garantia, depoimentos, vídeo) */
+  htmlBeforePayment?: string;
+  /** HTML no fim da página, antes do rodapé */
+  htmlBottom?: string;
   /** Segundos de polling do status do PIX */
   pollIntervalMs?: number;
 }
@@ -90,6 +102,14 @@ export interface UpsellTheme {
   bgColor?: string;
   textColor?: string;
   cardColor?: string;
+  /** CSS aplicado só nesta página de upsell */
+  customCss?: string;
+  /** HTML acima do título */
+  htmlTop?: string;
+  /** HTML entre o conteúdo e os botões */
+  htmlBeforeCta?: string;
+  /** HTML no fim da página */
+  htmlBottom?: string;
 }
 
 export interface Upsell {

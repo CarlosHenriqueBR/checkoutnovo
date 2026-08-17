@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { one } from '@/lib/db';
 import { safeJson } from '@/lib/utils';
-import type { Checkout, CheckoutConfig, PixelAccount, PixelAccountConfig } from '@/lib/types';
+import type { Checkout, CheckoutConfig, PixelAccount, PixelAccountConfig, Product } from '@/lib/types';
 import { all } from '@/lib/db';
 import CheckoutClient from './CheckoutClient';
 import PixelScripts from '@/components/PixelScripts';
@@ -13,13 +13,21 @@ export const revalidate = 0;
 function load(slug: string) {
   const checkout = one<Checkout>('SELECT * FROM checkouts WHERE slug = ? AND active = 1', [slug]);
   if (!checkout) return null;
+
+  // A imagem do checkout tem prioridade; se estiver vazia, cai na do produto
+  // vinculado — foi o motivo de a foto não aparecer quando era cadastrada
+  // apenas em Produtos.
+  const product = checkout.product_id
+    ? one<Product>('SELECT * FROM products WHERE id = ?', [checkout.product_id])
+    : undefined;
+
   const pixels = all<PixelAccount>(
     `SELECT p.* FROM pixel_accounts p
        JOIN checkout_pixels cp ON cp.pixel_account_id = p.id
       WHERE cp.checkout_id = ? AND p.active = 1`,
     [checkout.id],
   );
-  return { checkout, pixels };
+  return { checkout, pixels, product };
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -33,7 +41,7 @@ export default async function CheckoutPage({ params }: { params: Promise<{ slug:
   const data = load(slug);
   if (!data) notFound();
 
-  const { checkout, pixels } = data;
+  const { checkout, pixels, product } = data;
   const config = safeJson<CheckoutConfig>(checkout.config_json, {});
 
   // Só o que o navegador precisa — chaves de API NUNCA vão para o cliente.
@@ -58,7 +66,7 @@ export default async function CheckoutPage({ params }: { params: Promise<{ slug:
         name={checkout.name}
         headline={checkout.headline}
         subheadline={checkout.subheadline}
-        imageUrl={checkout.image_url}
+        imageUrl={checkout.image_url || product?.image_url || ''}
         priceCents={checkout.price_cents}
         downsellPriceCents={checkout.downsell_price_cents}
         downsellHeadline={checkout.downsell_headline}

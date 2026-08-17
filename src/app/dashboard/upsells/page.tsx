@@ -43,7 +43,16 @@ const EMPTY: Draft = {
   next_on_decline_id: null,
   final_url: '/obrigado',
   active: true,
-  theme: { primaryColor: '#00b37e', bgColor: '#f4f5f7', textColor: '#14181f', cardColor: '#ffffff' },
+  theme: {
+    primaryColor: '#5cc47f',
+    bgColor: '#f2f2f2',
+    textColor: '#3d4756',
+    cardColor: '#ffffff',
+    customCss: '',
+    htmlTop: '',
+    htmlBeforeCta: '',
+    htmlBottom: '',
+  },
 };
 
 const BLOCK_TYPES: UpsellBlock['type'][] = ['heading', 'text', 'image', 'video', 'list', 'divider', 'html'];
@@ -265,6 +274,30 @@ export default function UpsellsPage() {
             </Field>
             <Field label="Cartão">
               <input type="color" value={d.theme.cardColor || '#ffffff'} onChange={(e) => set('theme', { ...d.theme, cardColor: e.target.value })} />
+            </Field>
+          </div>
+
+          <h3 className="dash-h1" style={{ fontSize: 14, marginTop: 16 }}>HTML e CSS personalizados</h3>
+          <p className="dash-desc" style={{ marginBottom: 10 }}>
+            Injetados nesta página de upsell. Aceitam HTML completo, inclusive <code>&lt;script&gt;</code>.
+          </p>
+          <Field label="CSS personalizado" hint="Ex.: .ck-btn { background:#000 } · .ck-card { padding:40px }">
+            <textarea
+              rows={5}
+              className="mono"
+              value={d.theme.customCss || ''}
+              onChange={(e) => set('theme', { ...d.theme, customCss: e.target.value })}
+            />
+          </Field>
+          <div className="row">
+            <Field label="HTML no topo">
+              <textarea rows={4} className="mono" value={d.theme.htmlTop || ''} onChange={(e) => set('theme', { ...d.theme, htmlTop: e.target.value })} />
+            </Field>
+            <Field label="HTML antes dos botões">
+              <textarea rows={4} className="mono" value={d.theme.htmlBeforeCta || ''} onChange={(e) => set('theme', { ...d.theme, htmlBeforeCta: e.target.value })} />
+            </Field>
+            <Field label="HTML no rodapé">
+              <textarea rows={4} className="mono" value={d.theme.htmlBottom || ''} onChange={(e) => set('theme', { ...d.theme, htmlBottom: e.target.value })} />
             </Field>
           </div>
 

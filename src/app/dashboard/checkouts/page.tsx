@@ -66,6 +66,11 @@ const EMPTY: Draft = {
     showSecurityBadges: true,
     noticeText: 'Compra 100% segura • Pagamento via PIX',
     ctaLabel: '',
+    customCss: '',
+    htmlTop: '',
+    htmlAfterCart: '',
+    htmlBeforePayment: '',
+    htmlBottom: '',
     pollIntervalMs: 5000,
   },
 };
@@ -289,6 +294,43 @@ export default function CheckoutsPage() {
                 {label}
               </label>
             ))}
+          </div>
+
+          <h3 className="dash-h1" style={{ fontSize: 14, marginTop: 16 }}>HTML e CSS personalizados</h3>
+          <p className="dash-desc" style={{ marginBottom: 10 }}>
+            Os blocos abaixo são injetados na página do checkout. Aceitam HTML completo, inclusive{' '}
+            <code>&lt;script&gt;</code> (players de vídeo, prova social). O formulário de pagamento continua
+            funcionando — você não precisa recriar nada dele.
+          </p>
+
+          <Field
+            label="CSS personalizado"
+            hint="Aplicado só neste checkout. Ex.: .ck-btn { background:#000 } · .ck-card { border-radius:4px }"
+          >
+            <textarea
+              rows={6}
+              className="mono"
+              value={d.config.customCss || ''}
+              onChange={(e) => setCfg('customCss', e.target.value)}
+              placeholder={'.ck-btn { background: #ff5a00; }\n.ck-card { border-radius: 4px; }'}
+            />
+          </Field>
+
+          <div className="row">
+            <Field label="HTML no topo" hint="Acima de tudo — logo, tarja, aviso">
+              <textarea rows={4} className="mono" value={d.config.htmlTop || ''} onChange={(e) => setCfg('htmlTop', e.target.value)} />
+            </Field>
+            <Field label="HTML abaixo do carrinho" hint="Selos, garantia, contador">
+              <textarea rows={4} className="mono" value={d.config.htmlAfterCart || ''} onChange={(e) => setCfg('htmlAfterCart', e.target.value)} />
+            </Field>
+          </div>
+          <div className="row">
+            <Field label="HTML antes do pagamento" hint="Depoimentos, vídeo, quebra de objeção">
+              <textarea rows={4} className="mono" value={d.config.htmlBeforePayment || ''} onChange={(e) => setCfg('htmlBeforePayment', e.target.value)} />
+            </Field>
+            <Field label="HTML no rodapé" hint="Termos, suporte, selos">
+              <textarea rows={4} className="mono" value={d.config.htmlBottom || ''} onChange={(e) => setCfg('htmlBottom', e.target.value)} />
+            </Field>
           </div>
 
           <h3 className="dash-h1" style={{ fontSize: 14, marginTop: 16 }}>Contas de pixel que recebem a venda</h3>

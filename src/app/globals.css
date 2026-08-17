@@ -823,3 +823,11 @@ table.dash-table {
 .ck-wrap-wide {
   max-width: 720px;
 }
+
+/* ------------------- blocos de HTML personalizado --------------------- */
+.ck-slot { width: 100%; }
+.ck-slot:empty { display: none; }
+.ck-slot-top { margin-bottom: 12px; }
+.ck-slot-cart, .ck-slot-pay { margin-bottom: 20px; }
+.ck-slot-cta { margin: 16px 0; }
+.ck-slot-bottom { margin-top: 4px; margin-bottom: 20px; }

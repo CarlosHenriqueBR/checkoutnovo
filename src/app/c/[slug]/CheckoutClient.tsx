@@ -5,6 +5,7 @@ import type { CheckoutConfig } from '@/lib/types';
 import { brl, isValidCPF, isValidEmail, isValidPhone, onlyDigits } from '@/lib/utils';
 import PixLogo from '@/components/PixLogo';
 import { SecureBadge, CheckoutFooter, Chevron } from '@/components/CheckoutChrome';
+import HtmlSlot, { CustomStyle } from '@/components/HtmlSlot';
 
 declare global {
   interface Window {
@@ -279,7 +280,9 @@ export default function CheckoutClient(p: Props) {
   if (pix) {
     return (
       <div className="ck-page" style={style}>
+        <CustomStyle css={p.config.customCss} />
         <div className="ck-wrap">
+          <HtmlSlot html={p.config.htmlTop} className="ck-slot ck-slot-top" />
           <SecureBadge />
           <div className="ck-card ck-pix">
             {paid ? (
@@ -317,6 +320,7 @@ export default function CheckoutClient(p: Props) {
   /* =============================== FORM ================================== */
   return (
     <div className="ck-page" style={style}>
+      <CustomStyle css={p.config.customCss} />
       {seconds > 0 && (
         <div className="ck-timer">
           {p.config.timerText || 'Oferta expira em'}{' '}
@@ -327,6 +331,7 @@ export default function CheckoutClient(p: Props) {
       )}
 
       <div className="ck-wrap">
+        <HtmlSlot html={p.config.htmlTop} className="ck-slot ck-slot-top" />
         <SecureBadge />
 
         {/* ------------------------------ carrinho ---------------------- */}
@@ -373,6 +378,8 @@ export default function CheckoutClient(p: Props) {
             <span>{brl(total)}</span>
           </div>
         </section>
+
+        <HtmlSlot html={p.config.htmlAfterCart} className="ck-slot ck-slot-cart" />
 
         <form onSubmit={submit} noValidate>
           {/* --------------------------- identificação ------------------ */}
@@ -457,6 +464,8 @@ export default function CheckoutClient(p: Props) {
             </section>
           )}
 
+          <HtmlSlot html={p.config.htmlBeforePayment} className="ck-slot ck-slot-pay" />
+
           {/* ------------------------------ pagamento ------------------- */}
           <section className="ck-card">
             <h2 className="ck-card-title">Pagamento</h2>
@@ -477,6 +486,8 @@ export default function CheckoutClient(p: Props) {
             </button>
           </section>
         </form>
+
+        <HtmlSlot html={p.config.htmlBottom} className="ck-slot ck-slot-bottom" />
       </div>
 
       <CheckoutFooter storeName={storeName} />

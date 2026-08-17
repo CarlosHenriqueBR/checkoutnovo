@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { UpsellBlock, UpsellTheme } from '@/lib/types';
 import { brl } from '@/lib/utils';
+import HtmlSlot, { CustomStyle } from '@/components/HtmlSlot';
 
 interface Props {
   slug: string;
@@ -202,6 +203,7 @@ export default function UpsellClient(p: Props) {
   if (pix) {
     return (
       <div className="ck-page" style={style}>
+        <CustomStyle css={p.theme.customCss} />
         <div className="ck-topbar">{paid ? 'Pagamento aprovado!' : 'Finalize o PIX para liberar'}</div>
         <div className="ck-wrap">
           <div className="ck-card ck-pix">
@@ -235,8 +237,10 @@ export default function UpsellClient(p: Props) {
 
   return (
     <div className="ck-page" style={style}>
+      <CustomStyle css={p.theme.customCss} />
       <div className="ck-topbar">Oferta exclusiva — só aparece uma vez</div>
       <div className="ck-wrap ck-wrap-wide">
+        <HtmlSlot html={p.theme.htmlTop} className="ck-slot ck-slot-top" />
         <div className="ck-card">
           <h1 className="ck-card-title" style={{ fontSize: 22 }}>
             {isDown ? p.downsellHeadline || p.headline : p.headline || p.name}
@@ -255,6 +259,8 @@ export default function UpsellClient(p: Props) {
             <span className="ck-price-big">{brl(price)}</span>
           </div>
 
+          <HtmlSlot html={p.theme.htmlBeforeCta} className="ck-slot ck-slot-cta" />
+
           {error && <div className="ck-alert" style={{ marginTop: 12 }}>{error}</div>}
 
           <button className="ck-btn" style={{ marginTop: 14 }} disabled={loading} onClick={() => accept(offer)}>
@@ -264,6 +270,8 @@ export default function UpsellClient(p: Props) {
             {isDown ? 'Não, obrigado' : p.declineLabel}
           </button>
         </div>
+
+        <HtmlSlot html={p.theme.htmlBottom} className="ck-slot ck-slot-bottom" />
       </div>
     </div>
   );
